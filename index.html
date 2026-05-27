@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payroll Efficiency · BPO Intelligence Platform</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-void: #020408;
+  --bg-deep: #060c14;
+  --bg-card: rgba(8,16,32,0.85);
+  --bg-card2: rgba(10,20,40,0.7);
+  --bg-hover: rgba(14,28,56,0.9);
+  --border: rgba(20,80,180,0.2);
+  --border-bright: rgba(30,120,255,0.4);
+  --neon: #1e78ff;
+  --neon-dim: rgba(30,120,255,0.15);
+  --neon-mid: rgba(30,120,255,0.35);
+  --neon-glow: 0 0 20px rgba(30,120,255,0.4), 0 0 60px rgba(30,120,255,0.1);
+  --cyan: #00d4ff;
+  --cyan-dim: rgba(0,212,255,0.12);
+  --teal: #00ffcc;
+  --amber: #ffaa00;
+  --red: #ff3366;
+  --green: #00e676;
+  --text-primary: #e8f0ff;
+  --text-secondary: rgba(180,200,240,0.7);
+  --text-muted: rgba(120,150,200,0.5);
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'Outfit', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+  --sidebar-w: 240px;
+  --header-h: 64px;
+  --radius: 12px;
+  --radius-lg: 18px;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-body);background:var(--bg-void);color:var(--text-primary);min-height:100vh;overflow-x:hidden;font-size:14px;line-height:1.5}
+
+/* ── ANIMATED BACKGROUND ── */
+.bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+.bg-canvas canvas{width:100%;height:100%;opacity:.35}
+.bg-grid{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(30,120,255,0.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(30,120,255,0.03) 1px,transparent 1px);
+  background-size:40px 40px}
+.bg-radial{position:fixed;top:-20%;left:50%;transform:translateX(-50%);width:900px;height:600px;
+  background:radial-gradient(ellipse,rgba(30,120,255,0.06) 0%,transparent 70%);pointer-events:none;z-index:0}
+
+/* ── LAYOUT ── */
+.layout{display:flex;min-height:100vh;position:relative;z-index:1}
+
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sidebar-w);min-height:100vh;background:rgba(4,10,22,0.95);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:100;
+  backdrop-filter:blur(20px);transition:transform .3s}
+.sidebar-logo{padding:20px 20px 16px;border-bottom:1px solid var(--border)}
+.logo-mark{display:flex;align-items:center;gap:10px}
+.logo-icon{width:36px;height:36px;background:var(--neon);border-radius:8px;display:flex;align-items:center;justify-content:center;
+  box-shadow:var(--neon-glow);position:relative;overflow:hidden}
+.logo-icon::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.3),transparent)}
+.logo-icon svg{color:#fff;width:18px;height:18px}
+.logo-text{display:flex;flex-direction:column}
+.logo-title{font-family:var(--font-display);font-weight:800;font-size:13px;letter-spacing:.06em;color:var(--text-primary)}
+.logo-sub{font-size:9px;font-family:var(--font-mono);color:var(--text-muted);letter-spacing:.1em;text-transform:uppercase}
+
+.sidebar-nav{flex:1;padding:16px 12px;overflow-y:auto}
+.nav-section-label{font-size:9px;font-family:var(--font-mono);color:var(--text-muted);letter-spacing:.15em;text-transform:uppercase;padding:10px 8px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;
+  transition:all .2s;color:var(--text-secondary);font-size:13px;font-weight:500;margin-bottom:2px;border:1px solid transparent;position:relative}
+.nav-item:hover{background:var(--neon-dim);color:var(--text-primary);border-color:var(--border-bright)}
+.nav-item.active{background:linear-gradient(135deg,rgba(30,120,255,0.2),rgba(30,120,255,0.08));
+  color:var(--neon);border-color:rgba(30,120,255,0.3);box-shadow:inset 0 0 20px rgba(30,120,255,0.05)}
+.nav-item .nav-icon{width:16px;text-align:center;font-size:14px;flex-shrink:0}
+.nav-badge{margin-left:auto;background:var(--neon);color:#fff;font-size:9px;font-family:var(--font-mono);
+  padding:2px 6px;border-radius:20px;font-weight:700}
+.nav-badge.warn{background:var(--amber)}
+.nav-badge.danger{background:var(--red)}
+
+.sidebar-footer{padding:16px;border-top:1px solid var(--border)}
+.sidebar-footer .meta{font-size:10px;font-family:var(--font-mono);color:var(--text-muted)}
+.live-dot{display:inline-block;width:6px;height:6px;background:var(--green);border-radius:50%;
+  animation:pulse-dot 2s infinite;margin-right:5px}
+@keyframes pulse-dot{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,230,118,.4)}50%{opacity:.7;box-shadow:0 0 0 4px rgba(0,230,118,0)}}
+
+/* ── MAIN ── */
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-width:0}
+
+/* ── HEADER ── */
+.header{height:var(--header-h);background:rgba(4,10,22,0.9);border-bottom:1px solid var(--border);
+  backdrop-filter:blur(20px);position:sticky;top:0;z-index:90;display:flex;align-items:center;padding:0 24px;gap:16px}
+.header-title{font-family:var(--font-display);font-weight:800;font-size:18px;letter-spacing:-.01em}
+.header-title span{color:var(--neon)}
+.header-period{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);margin-left:4px;
+  border:1px solid var(--border);padding:3px 10px;border-radius:20px}
+.header-spacer{flex:1}
+.header-actions{display:flex;align-items:center;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:12px;
+  font-weight:600;cursor:pointer;border:none;font-family:var(--font-body);transition:all .2s;letter-spacing:.01em}
+.btn-ghost{background:transparent;color:var(--text-secondary);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--border-bright);color:var(--text-primary);background:var(--neon-dim)}
+.btn-primary{background:var(--neon);color:#fff;box-shadow:var(--neon-glow)}
+.btn-primary:hover{filter:brightness(1.15)}
+.btn-sm{padding:5px 10px;font-size:11px}
+
+/* Filter Bar */
+.filter-bar{background:rgba(4,10,22,0.7);border-bottom:1px solid var(--border);padding:10px 24px;
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;backdrop-filter:blur(10px)}
+.filter-chip{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:11px;
+  border:1px solid var(--border);background:var(--bg-card2);cursor:pointer;transition:all .2s;font-family:var(--font-mono);color:var(--text-secondary)}
+.filter-chip:hover,.filter-chip.active{border-color:var(--border-bright);color:var(--neon);background:var(--neon-dim)}
+.filter-select{background:var(--bg-card2);border:1px solid var(--border);color:var(--text-secondary);
+  padding:5px 10px;border-radius:8px;font-size:11px;font-family:var(--font-mono);outline:none;cursor:pointer}
+.filter-select:focus{border-color:var(--border-bright)}
+
+/* ── CONTENT ── */
+.content{padding:24px;display:flex;flex-direction:column;gap:24px;max-width:1600px;width:100%}
+
+/* ── SECTION TITLES ── */
+.section-title{font-family:var(--font-display);font-weight:700;font-size:15px;color:var(--text-primary);
+  display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.section-title::before{content:'';width:3px;height:18px;background:var(--neon);border-radius:2px;box-shadow:var(--neon-glow)}
+.section-sub{font-size:11px;font-family:var(--font-mono);color:var(--text-muted);margin-left:auto}
+
+/* ── CARDS ── */
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);
+  backdrop-filter:blur(20px);transition:all .25s;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(30,120,255,0.4),transparent);pointer-events:none}
+.card:hover{border-color:var(--border-bright);box-shadow:0 8px 40px rgba(0,0,0,.4),0 0 0 1px rgba(30,120,255,.1)}
+.card-body{padding:20px}
+
+/* ── KPI GRID ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+@media(max-width:1200px){.kpi-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:768px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+
+.kpi-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:18px 20px;position:relative;overflow:hidden;transition:all .3s;cursor:default}
+.kpi-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(30,120,255,0.04),transparent);pointer-events:none}
+.kpi-card:hover{border-color:rgba(30,120,255,.35);transform:translateY(-2px);box-shadow:0 12px 40px rgba(0,0,0,.5),0 0 30px rgba(30,120,255,.1)}
+.kpi-card.highlight{border-color:rgba(30,120,255,.3);background:linear-gradient(135deg,rgba(30,120,255,0.08),rgba(4,10,22,0.9))}
+.kpi-card.danger{border-color:rgba(255,51,102,.25);background:linear-gradient(135deg,rgba(255,51,102,0.06),rgba(4,10,22,0.9))}
+.kpi-card.success{border-color:rgba(0,230,118,.2);background:linear-gradient(135deg,rgba(0,230,118,0.05),rgba(4,10,22,0.9))}
+
+.kpi-label{font-size:10px;font-family:var(--font-mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.kpi-label .dot{width:5px;height:5px;border-radius:50%;background:var(--neon);flex-shrink:0}
+.kpi-label .dot.amber{background:var(--amber)}
+.kpi-label .dot.red{background:var(--red)}
+.kpi-label .dot.green{background:var(--green)}
+.kpi-value{font-family:var(--font-display);font-size:28px;font-weight:800;line-height:1;letter-spacing:-.02em;
+  background:linear-gradient(135deg,#e8f0ff,#a0c0ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;animation:count-up .8s ease-out}
+.kpi-value.neon{background:linear-gradient(135deg,var(--neon),var(--cyan));-webkit-background-clip:text;background-clip:text}
+.kpi-value.danger{background:linear-gradient(135deg,#ff3366,#ff6b8a);-webkit-background-clip:text;background-clip:text}
+.kpi-value.success{background:linear-gradient(135deg,#00e676,#00ffcc);-webkit-background-clip:text;background-clip:text}
+.kpi-meta{margin-top:8px;display:flex;align-items:center;gap:6px}
+.kpi-trend{font-size:11px;font-family:var(--font-mono);font-weight:600}
+.kpi-trend.up{color:var(--green)}
+.kpi-trend.down{color:var(--red)}
+.kpi-trend.neutral{color:var(--amber)}
+.kpi-vs{font-size:10px;color:var(--text-muted);font-family:var(--font-mono)}
+.kpi-sparkline{position:absolute;bottom:0;left:0;right:0;height:40px;opacity:.4}
+
+@keyframes count-up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── CHARTS ROW ── */
+.charts-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.charts-row-2{display:grid;grid-template-columns:1.5fr 1fr;gap:16px}
+.charts-row-3{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:1100px){.charts-row,.charts-row-2,.charts-row-3{grid-template-columns:1fr}}
+.chart-container{position:relative;height:220px}
+.chart-container.tall{height:300px}
+.chart-container.short{height:180px}
+
+/* Gauge */
+.gauge-wrap{display:flex;flex-direction:column;align-items:center;padding:10px 0}
+.gauge-container{position:relative;width:200px;height:110px}
+.gauge-value{text-align:center;margin-top:4px}
+.gauge-num{font-family:var(--font-display);font-size:32px;font-weight:800;color:var(--neon);
+  text-shadow:0 0 20px rgba(30,120,255,.5)}
+.gauge-label{font-size:10px;font-family:var(--font-mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em}
+.gauge-meta{display:flex;justify-content:center;gap:16px;margin-top:10px}
+.gauge-meta-item{text-align:center}
+.gauge-meta-item .val{font-family:var(--font-mono);font-size:13px;font-weight:600}
+.gauge-meta-item .lbl{font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em}
+
+/* ── SLIDER SIMULATION ── */
+.sim-panel{padding:20px}
+.sim-title{font-size:12px;font-family:var(--font-mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px}
+.sim-slider-wrap{margin:16px 0}
+.slider-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.slider-label span{font-size:12px;color:var(--text-secondary)}
+.slider-label strong{font-family:var(--font-display);font-size:18px;color:var(--neon)}
+input[type=range]{width:100%;-webkit-appearance:none;height:4px;border-radius:2px;
+  background:linear-gradient(90deg,var(--neon) var(--val,50%),rgba(30,120,255,0.2) var(--val,50%));outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+  background:var(--neon);box-shadow:var(--neon-glow);border:2px solid rgba(255,255,255,.3);cursor:pointer;transition:transform .15s}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
+.sim-result{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.sim-result-card{background:var(--bg-card2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
+.sim-result-card .r-val{font-family:var(--font-display);font-size:22px;font-weight:800}
+.sim-result-card .r-lbl{font-size:9px;font-family:var(--font-mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;margin-top:2px}
+.sim-delta{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px;
+  background:var(--neon-dim);border:1px solid var(--border-bright);border-radius:8px;padding:8px 12px;font-size:12px;font-family:var(--font-mono)}
+.sim-delta .arrow{font-size:16px}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;border-radius:var(--radius)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead tr{border-bottom:1px solid var(--border-bright)}
+thead th{padding:10px 12px;text-align:left;font-family:var(--font-mono);font-size:10px;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--text-muted);font-weight:500;white-space:nowrap;cursor:pointer;user-select:none}
+thead th:hover{color:var(--neon)}
+thead th.sort-asc::after{content:' ↑'}
+thead th.sort-desc::after{content:' ↓'}
+tbody tr{border-bottom:1px solid rgba(30,120,255,0.06);transition:all .15s;cursor:pointer}
+tbody tr:hover{background:rgba(30,120,255,0.06)}
+tbody td{padding:9px 12px;color:var(--text-secondary)}
+tbody td.mono{font-family:var(--font-mono);font-size:11px}
+.status-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:10px;font-family:var(--font-mono);font-weight:700;letter-spacing:.05em}
+.status-badge.excellent{background:rgba(0,230,118,.12);color:#00e676;border:1px solid rgba(0,230,118,.25)}
+.status-badge.healthy{background:rgba(30,120,255,.12);color:var(--neon);border:1px solid rgba(30,120,255,.25)}
+.status-badge.risk{background:rgba(255,170,0,.12);color:var(--amber);border:1px solid rgba(255,170,0,.25)}
+.status-badge.critical{background:rgba(255,51,102,.12);color:var(--red);border:1px solid rgba(255,51,102,.25)}
+.pe-bar{display:flex;align-items:center;gap:8px}
+.pe-bar-bg{flex:1;height:4px;background:rgba(30,120,255,.15);border-radius:2px;overflow:hidden;min-width:60px}
+.pe-bar-fill{height:100%;border-radius:2px;transition:width .5s ease}
+.agent-avatar{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700;font-family:var(--font-mono);flex-shrink:0}
+
+/* Table pagination */
+.table-footer{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid var(--border);font-size:11px;font-family:var(--font-mono);color:var(--text-muted)}
+.pagination{display:flex;gap:4px}
+.page-btn{width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:transparent;
+  color:var(--text-secondary);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.page-btn:hover,.page-btn.active{border-color:var(--neon);color:var(--neon);background:var(--neon-dim)}
+
+/* ── INSIGHTS ── */
+.insights-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:1100px){.insights-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.insights-grid{grid-template-columns:1fr}}
+
+.insight-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:16px;
+  position:relative;overflow:hidden;transition:all .25s}
+.insight-card:hover{border-color:var(--border-bright);transform:translateY(-2px)}
+.insight-card::after{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--neon)}
+.insight-card.warn::after{background:var(--amber)}
+.insight-card.danger::after{background:var(--red)}
+.insight-card.success::after{background:var(--green)}
+.insight-icon{width:32px;height:32px;border-radius:8px;background:var(--neon-dim);border:1px solid var(--border-bright);
+  display:flex;align-items:center;justify-content:center;font-size:14px;margin-bottom:10px}
+.insight-icon.warn{background:rgba(255,170,0,.1);border-color:rgba(255,170,0,.3)}
+.insight-icon.danger{background:rgba(255,51,102,.1);border-color:rgba(255,51,102,.3)}
+.insight-icon.success{background:rgba(0,230,118,.08);border-color:rgba(0,230,118,.2)}
+.insight-text{font-size:12px;color:var(--text-secondary);line-height:1.6}
+.insight-text strong{color:var(--text-primary)}
+.insight-metric{margin-top:8px;font-family:var(--font-mono);font-size:10px;color:var(--neon)}
+
+/* ── LOB RANKING ── */
+.lob-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:900px){.lob-grid{grid-template-columns:repeat(2,1fr)}}
+.lob-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:16px;transition:all .2s}
+.lob-card:hover{border-color:var(--border-bright);background:var(--bg-hover)}
+.lob-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.lob-name{font-family:var(--font-display);font-weight:700;font-size:14px}
+.lob-rank{font-family:var(--font-mono);font-size:10px;color:var(--text-muted)}
+.lob-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.lob-metric{background:rgba(30,120,255,.06);border-radius:8px;padding:8px 10px}
+.lob-metric .m-val{font-family:var(--font-display);font-size:15px;font-weight:700}
+.lob-metric .m-key{font-size:9px;font-family:var(--font-mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em}
+.lob-bar-row{margin-top:12px;display:flex;align-items:center;gap:8px;font-size:11px;font-family:var(--font-mono)}
+.lob-bar-bg{flex:1;height:5px;background:rgba(30,120,255,.1);border-radius:3px;overflow:hidden}
+.lob-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--neon),var(--cyan))}
+
+/* ── HEATMAP ── */
+.heatmap{display:grid;gap:3px}
+.heatmap-row{display:flex;gap:3px;align-items:center}
+.heatmap-label{font-family:var(--font-mono);font-size:9px;color:var(--text-muted);width:70px;flex-shrink:0;text-align:right;padding-right:6px}
+.heatmap-col-labels{display:flex;gap:3px;padding-left:76px;margin-bottom:4px}
+.heatmap-col-labels span{font-family:var(--font-mono);font-size:9px;color:var(--text-muted);width:28px;text-align:center;flex-shrink:0}
+.hm-cell{width:28px;height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-size:8px;color:rgba(255,255,255,.7);cursor:pointer;transition:transform .15s;flex-shrink:0}
+.hm-cell:hover{transform:scale(1.2);z-index:10;box-shadow:0 0 10px rgba(0,0,0,.5)}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(30,120,255,.3);border-radius:2px}
+::-webkit-scrollbar-thumb:hover{background:rgba(30,120,255,.5)}
+
+/* ── SKELETON ── */
+.skeleton{background:linear-gradient(90deg,rgba(20,40,80,.4) 25%,rgba(30,60,120,.3) 50%,rgba(20,40,80,.4) 75%);
+  background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.tab{padding:8px 16px;font-size:12px;font-family:var(--font-mono);color:var(--text-muted);cursor:pointer;
+  border-bottom:2px solid transparent;transition:all .2s;letter-spacing:.04em}
+.tab:hover{color:var(--text-secondary)}
+.tab.active{color:var(--neon);border-bottom-color:var(--neon)}
+
+/* ── EXPORT BUTTONS ── */
+.export-row{display:flex;gap:8px;align-items:center}
+
+/* ── MOBILE ── */
+@media(max-width:768px){
+  :root{--sidebar-w:0px}
+  .sidebar{transform:translateX(-240px)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .content{padding:16px}
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .menu-btn{display:flex!important}
+}
+.menu-btn{display:none;background:transparent;border:1px solid var(--border);border-radius:8px;
+  padding:6px 10px;cursor:pointer;color:var(--text-secondary)}
+
+/* ── TOOLTIP (custom) ── */
+.tooltip-custom{position:fixed;background:rgba(4,10,22,.95);border:1px solid var(--border-bright);
+  border-radius:8px;padding:8px 12px;font-family:var(--font-mono);font-size:11px;color:var(--text-primary);
+  pointer-events:none;z-index:9999;backdrop-filter:blur(20px);display:none;max-width:180px}
+
+/* Waterfall */
+.waterfall-container{padding:10px 0}
+
+/* Bubble legend */
+.bubble-legend{display:flex;gap:16px;margin-top:8px;flex-wrap:wrap}
+.bubble-legend-item{display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:10px;color:var(--text-muted)}
+.bubble-legend-dot{width:10px;height:10px;border-radius:50%}
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-radial"></div>
+<div class="tooltip-custom" id="tooltip"></div>
+
+<div class="layout">
+
+<!-- ═══════════════════════ SIDEBAR ═══════════════════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <span class="logo-title">PAYROLL INTEL</span>
+        <span class="logo-sub">BPO Analytics Platform</span>
+      </div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Principal</div>
+    <div class="nav-item active" onclick="scrollTo('exec')">
+      <span class="nav-icon">⬡</span> Resumen Ejecutivo
+    </div>
+    <div class="nav-item" onclick="scrollTo('pe-analytics')">
+      <span class="nav-icon">◈</span> PE Analytics
+    </div>
+    <div class="nav-item" onclick="scrollTo('pr-analytics')">
+      <span class="nav-icon">◉</span> PR Analytics
+    </div>
+
+    <div class="nav-section-label" style="margin-top:8px">Operaciones</div>
+    <div class="nav-item" onclick="scrollTo('agents')">
+      <span class="nav-icon">▣</span> Agentes
+      <span class="nav-badge warn" id="risk-count">0</span>
+    </div>
+    <div class="nav-item" onclick="scrollTo('lob')">
+      <span class="nav-icon">◧</span> LOB Analysis
+    </div>
+    <div class="nav-item" onclick="scrollTo('advanced')">
+      <span class="nav-icon">◬</span> Visualizaciones
+    </div>
+
+    <div class="nav-section-label" style="margin-top:8px">Inteligencia</div>
+    <div class="nav-item" onclick="scrollTo('insights')">
+      <span class="nav-icon">◈</span> Smart Insights
+      <span class="nav-badge" id="insight-count">7</span>
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="meta"><span class="live-dot"></span>Live · Mayo 2025</div>
+    <div class="meta" style="margin-top:4px;color:rgba(120,150,200,.35)">v2.4.1 · BPO Intelligence</div>
+  </div>
+</aside>
+
+<!-- ═══════════════════════ MAIN ═══════════════════════ -->
+<main class="main">
+
+  <!-- HEADER -->
+  <header class="header">
+    <button class="menu-btn" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+    <div class="header-title">Payroll <span>Efficiency</span></div>
+    <span class="header-period" id="current-period">Semana 20 · Mayo 2025</span>
+    <div class="header-spacer"></div>
+    <div class="header-actions">
+      <div class="export-row">
+        <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ CSV</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportExcel()">⬇ Excel</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportPDF()">⬇ PDF</button>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="refreshData()">↺ Refresh</button>
+    </div>
+  </header>
+
+  <!-- FILTER BAR -->
+  <div class="filter-bar">
+    <select class="filter-select" id="filter-lob" onchange="applyFilters()">
+      <option value="">Todos los LOBs</option>
+      <option>Sales</option>
+      <option>Support</option>
+      <option>Collections</option>
+      <option>Tech Support</option>
+      <option>Retention</option>
+      <option>Back Office</option>
+    </select>
+    <select class="filter-select" id="filter-status" onchange="applyFilters()">
+      <option value="">Todos los estados</option>
+      <option>Excellent</option>
+      <option>Healthy</option>
+      <option>Risk</option>
+      <option>Critical</option>
+    </select>
+    <select class="filter-select" id="filter-tl" onchange="applyFilters()">
+      <option value="">Team Leads</option>
+    </select>
+    <div class="filter-chip active" onclick="togglePeriod(this,'week')">Semana</div>
+    <div class="filter-chip" onclick="togglePeriod(this,'month')">Mes</div>
+    <div class="filter-chip" onclick="togglePeriod(this,'quarter')">Trimestre</div>
+    <div style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--text-muted)">
+      Actualizado: <span id="last-update"></span>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- ─── EXEC SUMMARY ─── -->
+    <section id="exec">
+      <div class="section-title">
+        Resumen Ejecutivo
+        <span class="section-sub">BPO · Contact Center Operations</span>
+      </div>
+      <div class="kpi-grid" id="kpi-grid">
+        <!-- populated by JS -->
+      </div>
+    </section>
+
+    <!-- ─── PE ANALYTICS ─── -->
+    <section id="pe-analytics">
+      <div class="section-title">Payroll Efficiency Analytics</div>
+      <div class="charts-row">
+
+        <!-- Gauge -->
+        <div class="card">
+          <div class="card-body">
+            <div class="section-title" style="font-size:13px;margin-bottom:8px">PE · Gauge</div>
+            <div class="gauge-wrap">
+              <canvas id="gaugeChart" width="220" height="130"></canvas>
+              <div class="gauge-value">
+                <div class="gauge-num" id="gauge-num">88%</div>
+                <div class="gauge-label">Payroll Efficiency</div>
+              </div>
+              <div class="gauge-meta">
+                <div class="gauge-meta-item">
+                  <div class="val" style="color:var(--text-muted)">85%</div>
+                  <div class="lbl">META</div>
+                </div>
+                <div class="gauge-meta-item">
+                  <div class="val" style="color:var(--green)">+3%</div>
+                  <div class="lbl">vs META</div>
+                </div>
+                <div class="gauge-meta-item">
+                  <div class="val" style="color:var(--amber)">+1.2%</div>
+                  <div class="lbl">WoW</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PE Trend -->
+        <div class="card">
+          <div class="card-body">
+            <div class="section-title" style="font-size:13px;margin-bottom:8px">Tendencia PE <span class="section-sub">12 semanas</span></div>
+            <div class="chart-container">
+              <canvas id="peTrendChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Heatmap -->
+        <div class="card">
+          <div class="card-body">
+            <div class="section-title" style="font-size:13px;margin-bottom:8px">PE Heatmap por LOB <span class="section-sub">Semanas</span></div>
+            <div id="heatmap-container"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ─── PR ANALYTICS ─── -->
+    <section id="pr-analytics">
+      <div class="section-title">Payroll to Revenue Analytics</div>
+      <div class="charts-row-2">
+
+        <div class="card">
+          <div class="card-body">
+            <div class="section-title" style="font-size:13px;margin-bottom:12px">Correlación PE → PR</div>
+            <div class="chart-container tall">
+              <canvas id="correlationChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body sim-panel">
+            <div class="sim-title">🔮 Simulación Predictiva</div>
+            <p style="font-size:11px;color:var(--text-muted);margin-bottom:14px">
+              Por cada <strong style="color:var(--neon)">+1% en PE</strong>, el PR <strong style="color:var(--green)">disminuye 0.52%</strong>
+            </p>
+            <div class="sim-slider-wrap">
+              <div class="slider-label">
+                <span>Payroll Efficiency Target</span>
+                <strong id="sim-pe-label">88%</strong>
+              </div>
+              <input type="range" id="sim-slider" min="75" max="98" value="88" oninput="updateSimulation(this.value)">
+              <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:9px;color:var(--text-muted);margin-top:4px">
+                <span>75%</span><span>META 85%</span><span>98%</span>
+              </div>
+            </div>
+            <div class="sim-result">
+              <div class="sim-result-card">
+                <div class="r-val" id="sim-pe-val" style="color:var(--neon)">88%</div>
+                <div class="r-lbl">PE Proyectado</div>
+              </div>
+              <div class="sim-result-card">
+                <div class="r-val" id="sim-pr-val" style="color:var(--green)">46.0%</div>
+                <div class="r-lbl">PR Proyectado</div>
+              </div>
+            </div>
+            <div class="sim-delta" id="sim-delta">
+              <span class="arrow">→</span>
+              <span id="sim-message">Sin cambio respecto al baseline</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ─── AGENTS TABLE ─── -->
+    <section id="agents">
+      <div class="section-title">
+        Rendimiento por Agente
+        <span class="section-sub" id="agents-count"></span>
+      </div>
+
+      <div class="card">
+        <div style="padding:16px 16px 0;display:flex;align-items:center;gap:10px">
+          <input type="text" id="agent-search" placeholder="Buscar agente..." oninput="filterTable()"
+            style="background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;
+            color:var(--text-primary);font-family:var(--font-mono);font-size:11px;outline:none;width:200px">
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted)" id="table-showing"></span>
+        </div>
+        <div class="table-wrap" style="padding:0 0 0">
+          <table id="agents-table">
+            <thead>
+              <tr>
+                <th onclick="sortTable('name')">Agente</th>
+                <th onclick="sortTable('lob')">LOB</th>
+                <th onclick="sortTable('tl')">Team Lead</th>
+                <th onclick="sortTable('prodHours')">H. Productivas</th>
+                <th onclick="sortTable('nomHours')">H. Nómina</th>
+                <th onclick="sortTable('pe')">PE %</th>
+                <th onclick="sortTable('payrollCost')">Payroll COP</th>
+                <th onclick="sortTable('revenue')">Revenue COP</th>
+                <th onclick="sortTable('pr')">PR %</th>
+                <th onclick="sortTable('status')">Estado</th>
+              </tr>
+            </thead>
+            <tbody id="agents-tbody"></tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <span id="table-info"></span>
+          <div class="pagination" id="pagination"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── LOB ANALYSIS ─── -->
+    <section id="lob">
+      <div class="section-title">Análisis por LOB · Ranking</div>
+      <div class="lob-grid" id="lob-grid"></div>
+
+      <div style="margin-top:16px" class="card">
+        <div class="card-body">
+          <div class="section-title" style="font-size:13px;margin-bottom:12px">Comparativa LOB · PE vs PR vs Revenue</div>
+          <div class="chart-container tall">
+            <canvas id="lobCompareChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── ADVANCED VISUALS ─── -->
+    <section id="advanced">
+      <div class="section-title">Visualizaciones Avanzadas</div>
+      <div class="charts-row-3">
+
+        <div class="card">
+          <div class="card-body">
+            <div class="section-title" style="font-size:13px;margin-bottom:8px">Bubble Chart · PE × PR × Revenue</div>
+            <div class="chart-container tall">
+              <canvas id="bubbleChart"></canvas>
+            </div>
+            <div class="bubble-legend" id="bubble-legend"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+            <div class="section-title" style="font-size:13px;margin-bottom:8px">Waterfall · Eficiencia</div>
+            <div class="chart-container tall">
+              <canvas id="waterfallChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="margin-top:16px" class="charts-row-3">
+        <div class="card">
+          <div class="card-body">
+            <div class="section-title" style="font-size:13px;margin-bottom:8px">Distribución PE Agentes</div>
+            <div class="chart-container">
+              <canvas id="distChart"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <div class="section-title" style="font-size:13px;margin-bottom:8px">Workforce Utilization</div>
+            <div class="chart-container">
+              <canvas id="utilizationChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── INSIGHTS ─── -->
+    <section id="insights">
+      <div class="section-title">
+        Smart Insights
+        <span class="section-sub">Generado automáticamente</span>
+      </div>
+      <div class="insights-grid" id="insights-grid"></div>
+    </section>
+
+    <div style="height:40px"></div>
+  </div><!-- end content -->
+</main>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  DATA GENERATION
+// ═══════════════════════════════════════════════
+
+const LOBS = ['Sales','Support','Collections','Tech Support','Retention','Back Office'];
+const LOB_COLORS = ['#1e78ff','#00d4ff','#00ffcc','#ffaa00','#a78bfa','#ff6b8a'];
+const TEAM_LEADS = ['Carlos Mendoza','Andrea Ríos','Luis García','Sofía Torres','Miguel Herrera','Valentina Cruz','Juan Ospina','Diana Mejía'];
+
+const NAMES_F = ['María','Laura','Ana','Sofía','Valentina','Isabella','Camila','Lucía','Paula','Diana','Juliana','Gabriela','Natalia','Sara','Daniela'];
+const NAMES_M = ['Carlos','Juan','Andrés','Miguel','Luis','Sebastián','David','Felipe','Jorge','Alejandro','Sergio','Roberto','Fernando','Tomás','Diego'];
+const SURNAMES = ['García','Rodríguez','Martínez','López','González','Pérez','Torres','Ramírez','Flores','Herrera','Mendoza','Castro','Ortega','Ríos','Vargas','Morales','Jiménez','Cruz','Reyes','Silva'];
+
+function rand(min, max, dec=2){ return parseFloat((Math.random()*(max-min)+min).toFixed(dec)); }
+function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+function pick(arr){ return arr[randInt(0,arr.length-1)]; }
+function formatCOP(n){ return 'COP '+(n/1e6).toFixed(2)+'M'; }
+function fmtCOPK(n){ return (n/1e3).toFixed(0)+'K'; }
+
+// Generate 100 agents
+const AGENTS = Array.from({length:100},(_,i)=>{
+  const isFemale = Math.random()>.5;
+  const fn = isFemale?pick(NAMES_F):pick(NAMES_M);
+  const ln = pick(SURNAMES);
+  const lob = LOBS[Math.floor(i/17)%6] || pick(LOBS);
+  const nomHours = rand(140,180,1);
+  const pe = rand(72,96,2);
+  const prodHours = parseFloat((nomHours*pe/100).toFixed(1));
+  const payrollCost = rand(3200000,6800000,0);
+  const revenue = rand(6000000,18000000,0);
+  const pr = parseFloat((payrollCost/revenue*100).toFixed(2));
+  const status = pe>=90?'Excellent':pe>=85?'Healthy':pe>=78?'Risk':'Critical';
+  const tl = pick(TEAM_LEADS);
+  return { id:i+1, name:`${fn} ${ln}`, lob, tl, prodHours, nomHours, pe, payrollCost, revenue, pr, status, isFemale };
+});
+
+// LOB aggregates
+const LOB_DATA = LOBS.map((lob,i)=>{
+  const agents = AGENTS.filter(a=>a.lob===lob);
+  const prodH = agents.reduce((s,a)=>s+a.prodHours,0);
+  const nomH = agents.reduce((s,a)=>s+a.nomHours,0);
+  const pe = parseFloat((prodH/nomH*100).toFixed(2));
+  const payroll = agents.reduce((s,a)=>s+a.payrollCost,0);
+  const revenue = agents.reduce((s,a)=>s+a.revenue,0);
+  const pr = parseFloat((payroll/revenue*100).toFixed(2));
+  return { lob, agents:agents.length, prodH:parseFloat(prodH.toFixed(0)), nomH:parseFloat(nomH.toFixed(0)), pe, payroll, revenue, pr, color:LOB_COLORS[i], i };
+});
+LOB_DATA.sort((a,b)=>b.pe-a.pe);
+
+// Global totals
+const TOTALS = {
+  prodH: AGENTS.reduce((s,a)=>s+a.prodHours,0),
+  nomH: AGENTS.reduce((s,a)=>s+a.nomHours,0),
+  payroll: AGENTS.reduce((s,a)=>s+a.payrollCost,0),
+  revenue: AGENTS.reduce((s,a)=>s+a.revenue,0),
+};
+TOTALS.pe = parseFloat((TOTALS.prodH/TOTALS.nomH*100).toFixed(2));
+TOTALS.pr = parseFloat((TOTALS.payroll/TOTALS.revenue*100).toFixed(2));
+TOTALS.wowPe = rand(-2,4,1);
+TOTALS.momPe = rand(-1,6,1);
+TOTALS.wowPr = rand(-3,1,1);
+TOTALS.momPr = rand(-5,2,1);
+
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('last-update').textContent = new Date().toLocaleTimeString('es-CO');
+  document.getElementById('risk-count').textContent = AGENTS.filter(a=>a.status==='Risk'||a.status==='Critical').length;
+  renderKPIs();
+  renderGauge();
+  renderPETrend();
+  renderHeatmap();
+  renderCorrelation();
+  renderAgentsTable();
+  renderLOBGrid();
+  renderLOBCompare();
+  renderBubble();
+  renderWaterfall();
+  renderDistribution();
+  renderUtilization();
+  renderInsights();
+  updateSimulation(88);
+  populateTLFilter();
+  document.getElementById('agents-count').textContent = `${AGENTS.length} agentes`;
+  animateKPIs();
+});
+
+// ═══════════════════════════════════════════════
+//  KPI CARDS
+// ═══════════════════════════════════════════════
+function renderKPIs(){
+  const kpis = [
+    { label:'Horas Productivas', dot:'', value: TOTALS.prodH.toLocaleString('es-CO'), suffix:'hrs', trend: '+2.3%', dir:'up', vs:'vs sem. ant.', cls:'', vcls:'' },
+    { label:'Horas Nómina', dot:'amber', value: TOTALS.nomH.toLocaleString('es-CO'), suffix:'hrs', trend: '+0.8%', dir:'up', vs:'vs sem. ant.', cls:'', vcls:'' },
+    { label:'Payroll Efficiency', dot:'', value: TOTALS.pe.toFixed(1), suffix:'%', trend: `${TOTALS.wowPe>0?'+':''}${TOTALS.wowPe}%`, dir:TOTALS.wowPe>=0?'up':'down', vs:'Meta: 85%', cls:'highlight', vcls:'neon' },
+    { label:'Payroll to Revenue', dot:'red', value: TOTALS.pr.toFixed(1), suffix:'%', trend: `${TOTALS.wowPr>0?'+':''}${TOTALS.wowPr}%`, dir:TOTALS.wowPr>0?'down':'up', vs:'WoW', cls: TOTALS.pr>50?'danger':'', vcls: TOTALS.pr>50?'danger':'' },
+    { label:'Total Payroll Cost', dot:'', value: (TOTALS.payroll/1e9).toFixed(2), suffix:'B COP', trend: '-1.2%', dir:'up', vs:'vs sem. ant.', cls:'', vcls:'' },
+    { label:'Total Revenue', dot:'green', value: (TOTALS.revenue/1e9).toFixed(2), suffix:'B COP', trend: '+4.1%', dir:'up', vs:'vs sem. ant.', cls:'success', vcls:'success' },
+  ];
+  const grid = document.getElementById('kpi-grid');
+  grid.innerHTML = kpis.map(k=>`
+    <div class="kpi-card ${k.cls}">
+      <div class="kpi-label"><span class="dot ${k.dot}"></span>${k.label}</div>
+      <div class="kpi-value ${k.vcls}" data-target="${k.value}">${k.value}<span style="font-size:.45em;opacity:.7">${k.suffix}</span></div>
+      <div class="kpi-meta">
+        <span class="kpi-trend ${k.dir}">${k.dir==='up'?'▲':'▼'} ${k.trend}</span>
+        <span class="kpi-vs">${k.vs}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function animateKPIs(){
+  document.querySelectorAll('.kpi-value').forEach(el=>{
+    el.style.opacity='0';
+    el.style.transform='translateY(12px)';
+    setTimeout(()=>{
+      el.style.transition='opacity .5s, transform .5s';
+      el.style.opacity='1';
+      el.style.transform='translateY(0)';
+    },100+Math.random()*400);
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  GAUGE (Canvas manual)
+// ═══════════════════════════════════════════════
+function renderGauge(){
+  const canvas = document.getElementById('gaugeChart');
+  const ctx = canvas.getContext('2d');
+  const cx=110, cy=120, r=90;
+  const startAngle = Math.PI, endAngle = 2*Math.PI;
+  const peVal = TOTALS.pe/100;
+  const metaVal = 85/100;
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // Background arc
+  ctx.beginPath();
+  ctx.arc(cx,cy,r,startAngle,endAngle);
+  ctx.lineWidth=16;
+  ctx.strokeStyle='rgba(30,120,255,0.1)';
+  ctx.lineCap='round';
+  ctx.stroke();
+
+  // Meta marker
+  const metaAngle = startAngle + metaVal*Math.PI;
+  const mx = cx+r*Math.cos(metaAngle);
+  const my = cy+r*Math.sin(metaAngle);
+  ctx.beginPath();ctx.arc(mx,my,5,0,2*Math.PI);
+  ctx.fillStyle='rgba(255,170,0,0.8)';ctx.fill();
+
+  // Value arc (animated)
+  let cur = 0;
+  const target = peVal;
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    // bg
+    ctx.beginPath();ctx.arc(cx,cy,r,startAngle,endAngle);
+    ctx.lineWidth=16;ctx.strokeStyle='rgba(30,120,255,0.1)';ctx.lineCap='round';ctx.stroke();
+    // meta
+    const ma = startAngle+metaVal*Math.PI;
+    ctx.beginPath();ctx.arc(cx+r*Math.cos(ma),cy+r*Math.sin(ma),5,0,2*Math.PI);
+    ctx.fillStyle='rgba(255,170,0,0.9)';ctx.fill();
+    // value
+    const grad = ctx.createLinearGradient(cx-r,cy,cx+r,cy);
+    grad.addColorStop(0,'#1e78ff');grad.addColorStop(1,'#00d4ff');
+    ctx.beginPath();ctx.arc(cx,cy,r,startAngle,startAngle+cur*Math.PI);
+    ctx.lineWidth=16;ctx.strokeStyle=grad;ctx.lineCap='round';ctx.stroke();
+    // glow
+    ctx.beginPath();ctx.arc(cx,cy,r,startAngle,startAngle+cur*Math.PI);
+    ctx.lineWidth=22;ctx.strokeStyle='rgba(30,120,255,0.1)';ctx.stroke();
+    if(cur<target){ cur=Math.min(cur+target/40,target); requestAnimationFrame(draw); }
+  }
+  draw();
+  document.getElementById('gauge-num').textContent = TOTALS.pe.toFixed(1)+'%';
+}
+
+// ═══════════════════════════════════════════════
+//  PE TREND
+// ═══════════════════════════════════════════════
+function renderPETrend(){
+  const weeks = ['S9','S10','S11','S12','S13','S14','S15','S16','S17','S18','S19','S20'];
+  const base = TOTALS.pe;
+  const peData = weeks.map((_,i)=>parseFloat((base - 4 + i*0.4 + rand(-0.5,0.5,1)).toFixed(1)));
+  const metaLine = weeks.map(()=>85);
+
+  new Chart(document.getElementById('peTrendChart'),{
+    type:'line',
+    data:{
+      labels:weeks,
+      datasets:[
+        { label:'PE %', data:peData, borderColor:'#1e78ff', backgroundColor:'rgba(30,120,255,0.08)',
+          borderWidth:2.5, pointBackgroundColor:'#1e78ff', pointRadius:3, pointHoverRadius:6,
+          tension:.4, fill:true },
+        { label:'Meta 85%', data:metaLine, borderColor:'rgba(255,170,0,0.6)', borderWidth:1.5,
+          borderDash:[4,4], pointRadius:0, tension:0 }
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{labels:{color:'rgba(180,200,240,0.6)',font:{family:'DM Mono',size:10}}},
+        tooltip:{backgroundColor:'rgba(4,10,22,0.95)',borderColor:'rgba(30,120,255,0.4)',borderWidth:1,
+          titleFont:{family:'DM Mono',size:11},bodyFont:{family:'DM Mono',size:11},padding:10} },
+      scales:{ x:{grid:{color:'rgba(30,120,255,0.05)'},ticks:{color:'rgba(120,150,200,0.5)',font:{family:'DM Mono',size:9}}},
+        y:{grid:{color:'rgba(30,120,255,0.05)'},ticks:{color:'rgba(120,150,200,0.5)',font:{family:'DM Mono',size:9},callback:v=>v+'%'},
+          min:78,max:96} }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  HEATMAP
+// ═══════════════════════════════════════════════
+function renderHeatmap(){
+  const weeks = ['S15','S16','S17','S18','S19','S20'];
+  const cont = document.getElementById('heatmap-container');
+  let html = `<div class="heatmap-col-labels">${weeks.map(w=>`<span>${w}</span>`).join('')}</div>`;
+  html += '<div class="heatmap">';
+  LOBS.forEach(lob=>{
+    html += `<div class="heatmap-row"><div class="heatmap-label">${lob}</div>`;
+    weeks.forEach(()=>{
+      const v = rand(76,95,0);
+      const t = v>=90?'rgba(0,230,118':v>=85?'rgba(30,120,255':v>=80?'rgba(255,170,0':'rgba(255,51,102';
+      html += `<div class="hm-cell" style="background:${t},${(v-70)/30})" title="${lob}: ${v}%">${v}</div>`;
+    });
+    html += '</div>';
+  });
+  html += '</div>';
+  cont.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════
+//  CORRELATION PE vs PR
+// ═══════════════════════════════════════════════
+function renderCorrelation(){
+  const pe_vals = Array.from({length:20},(_,i)=>75+i);
+  const pr_actual = pe_vals.map(pe=>parseFloat((46 - (pe-88)*0.52 + rand(-1,1,1)).toFixed(2)));
+  const pr_theoretical = pe_vals.map(pe=>parseFloat((46-(pe-88)*0.52).toFixed(2)));
+
+  new Chart(document.getElementById('correlationChart'),{
+    type:'line',
+    data:{
+      labels:pe_vals.map(v=>v+'%'),
+      datasets:[
+        { label:'PR Real', data:pr_actual, borderColor:'rgba(0,212,255,0.8)', backgroundColor:'rgba(0,212,255,0.06)',
+          borderWidth:2, pointRadius:3, tension:.3, fill:true, pointBackgroundColor:'rgba(0,212,255,0.8)' },
+        { label:'PR Teórico', data:pr_theoretical, borderColor:'rgba(30,120,255,0.5)', borderWidth:1.5,
+          borderDash:[5,3], pointRadius:0, tension:.2 }
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{labels:{color:'rgba(180,200,240,0.6)',font:{family:'DM Mono',size:10}}},
+        tooltip:{backgroundColor:'rgba(4,10,22,0.95)',borderColor:'rgba(30,120,255,0.4)',borderWidth:1,
+          titleFont:{family:'DM Mono',size:11},bodyFont:{family:'DM Mono',size:11},padding:10} },
+      scales:{ x:{grid:{color:'rgba(30,120,255,0.05)'},ticks:{color:'rgba(120,150,200,0.5)',font:{family:'DM Mono',size:9}}},
+        y:{grid:{color:'rgba(30,120,255,0.05)'},ticks:{color:'rgba(120,150,200,0.5)',font:{family:'DM Mono',size:9},callback:v=>v+'%'},
+          reverse:false} }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  SIMULATION
+// ═══════════════════════════════════════════════
+function updateSimulation(val){
+  val = parseInt(val);
+  const baseline_pe = 88, baseline_pr = 46;
+  const new_pr = parseFloat((baseline_pr - (val-baseline_pe)*0.52).toFixed(2));
+  const delta_pr = parseFloat((new_pr - baseline_pr).toFixed(2));
+  const delta_pe = val - baseline_pe;
+
+  document.getElementById('sim-pe-label').textContent = val+'%';
+  document.getElementById('sim-pe-val').textContent = val+'%';
+  document.getElementById('sim-pr-val').textContent = new_pr+'%';
+
+  const msgEl = document.getElementById('sim-message');
+  const deltaEl = document.getElementById('sim-delta');
+  const slider = document.getElementById('sim-slider');
+
+  const pct = (val-75)/(98-75)*100;
+  slider.style.setProperty('--val',pct+'%');
+
+  if(delta_pe===0){
+    msgEl.textContent='Sin cambio respecto al baseline';
+    deltaEl.style.background='rgba(30,120,255,0.1)';
+  } else if(delta_pe>0){
+    msgEl.textContent=`+${delta_pe}% PE → PR baja ${Math.abs(delta_pr).toFixed(2)}% · Ahorro potencial`;
+    deltaEl.style.background='rgba(0,230,118,0.1)';
+    document.getElementById('sim-pr-val').style.color='var(--green)';
+  } else {
+    msgEl.textContent=`${delta_pe}% PE → PR sube ${Math.abs(delta_pr).toFixed(2)}% · Mayor costo`;
+    deltaEl.style.background='rgba(255,51,102,0.1)';
+    document.getElementById('sim-pr-val').style.color='var(--red)';
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  AGENTS TABLE
+// ═══════════════════════════════════════════════
+let currentPage = 1;
+const PAGE_SIZE = 15;
+let filteredAgents = [...AGENTS];
+let sortKey = 'pe', sortDir = -1;
+
+function renderAgentsTable(){
+  const start = (currentPage-1)*PAGE_SIZE;
+  const slice = filteredAgents.slice(start, start+PAGE_SIZE);
+  const colors = ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#c77dff','#ff9f43'];
+
+  document.getElementById('agents-tbody').innerHTML = slice.map(a=>{
+    const peColor = a.pe>=90?'#00e676':a.pe>=85?'#1e78ff':a.pe>=78?'#ffaa00':'#ff3366';
+    const li = LOBS.indexOf(a.lob);
+    const initials = a.name.split(' ').map(n=>n[0]).slice(0,2).join('');
+    const bgColors = ['rgba(30,120,255,.2)','rgba(0,212,255,.15)','rgba(0,255,204,.12)','rgba(255,170,0,.15)','rgba(167,139,250,.15)','rgba(255,107,138,.15)'];
+    const fgColors = LOB_COLORS;
+    return `<tr>
+      <td style="white-space:nowrap;display:flex;align-items:center;gap:8px;border:none">
+        <div class="agent-avatar" style="background:${bgColors[li]};color:${fgColors[li]}">${initials}</div>
+        ${a.name}
+      </td>
+      <td><span style="color:${LOB_COLORS[LOBS.indexOf(a.lob)]};font-family:var(--font-mono);font-size:10px">${a.lob}</span></td>
+      <td style="font-size:11px;color:var(--text-muted)">${a.tl.split(' ')[0]}</td>
+      <td class="mono">${a.prodHours}</td>
+      <td class="mono">${a.nomHours}</td>
+      <td>
+        <div class="pe-bar">
+          <span class="mono" style="color:${peColor};min-width:36px">${a.pe.toFixed(1)}%</span>
+          <div class="pe-bar-bg"><div class="pe-bar-fill" style="width:${a.pe}%;background:${peColor}"></div></div>
+        </div>
+      </td>
+      <td class="mono">${formatCOP(a.payrollCost)}</td>
+      <td class="mono">${formatCOP(a.revenue)}</td>
+      <td class="mono" style="color:${a.pr>50?'var(--red)':a.pr>45?'var(--amber)':'var(--green)'}">${a.pr.toFixed(1)}%</td>
+      <td><span class="status-badge ${a.status.toLowerCase()}">${a.status}</span></td>
+    </tr>`;
+  }).join('');
+
+  const total = filteredAgents.length;
+  document.getElementById('table-info').textContent = `Mostrando ${start+1}–${Math.min(start+PAGE_SIZE,total)} de ${total} agentes`;
+  document.getElementById('table-showing').textContent = `${total} agentes`;
+  renderPagination(total);
+}
+
+function renderPagination(total){
+  const pages = Math.ceil(total/PAGE_SIZE);
+  let html = '';
+  for(let i=1;i<=pages;i++){
+    if(i===1||i===pages||Math.abs(i-currentPage)<=1){
+      html+=`<button class="page-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+    } else if(Math.abs(i-currentPage)===2){
+      html+=`<button class="page-btn" style="pointer-events:none;color:var(--text-muted)">…</button>`;
+    }
+  }
+  document.getElementById('pagination').innerHTML = html;
+}
+
+function goPage(p){ currentPage=p; renderAgentsTable(); }
+
+function filterTable(){
+  const q = document.getElementById('agent-search').value.toLowerCase();
+  filteredAgents = AGENTS.filter(a=>
+    a.name.toLowerCase().includes(q)||
+    a.lob.toLowerCase().includes(q)||
+    a.status.toLowerCase().includes(q)
+  );
+  currentPage=1;
+  renderAgentsTable();
+}
+
+function sortTable(key){
+  if(sortKey===key) sortDir*=-1; else { sortKey=key; sortDir=-1; }
+  filteredAgents.sort((a,b)=>typeof a[key]==='string'?a[key].localeCompare(b[key])*sortDir:(a[key]-b[key])*sortDir);
+  document.querySelectorAll('thead th').forEach(th=>{th.classList.remove('sort-asc','sort-desc')});
+  renderAgentsTable();
+}
+
+// ═══════════════════════════════════════════════
+//  LOB GRID
+// ═══════════════════════════════════════════════
+function renderLOBGrid(){
+  const ranked = [...LOB_DATA].sort((a,b)=>b.pe-a.pe);
+  document.getElementById('lob-grid').innerHTML = ranked.map((l,i)=>`
+    <div class="lob-card" style="border-color:${l.color}22">
+      <div class="lob-header">
+        <div>
+          <div class="lob-rank" style="color:${l.color}">#${i+1} RANKING PE</div>
+          <div class="lob-name" style="color:${l.color}">${l.lob}</div>
+        </div>
+        <span class="status-badge ${l.pe>=90?'excellent':l.pe>=85?'healthy':l.pe>=78?'risk':'critical'}">${l.pe>=90?'Excellent':l.pe>=85?'Healthy':l.pe>=78?'Risk':'Critical'}</span>
+      </div>
+      <div class="lob-metrics">
+        <div class="lob-metric"><div class="m-val" style="color:${l.color}">${l.pe.toFixed(1)}%</div><div class="m-key">PE</div></div>
+        <div class="lob-metric"><div class="m-val" style="color:${l.pr>50?'var(--red)':'var(--green)'}">${l.pr.toFixed(1)}%</div><div class="m-key">PR</div></div>
+        <div class="lob-metric"><div class="m-val">${(l.revenue/1e9).toFixed(2)}B</div><div class="m-key">Revenue</div></div>
+        <div class="lob-metric"><div class="m-val">${l.agents}</div><div class="m-key">Agentes</div></div>
+      </div>
+      <div class="lob-bar-row">
+        <span style="font-size:9px;color:var(--text-muted)">PE</span>
+        <div class="lob-bar-bg"><div class="lob-bar-fill" style="width:${l.pe}%;background:${l.color}"></div></div>
+        <span style="color:${l.color}">${l.pe.toFixed(1)}%</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderLOBCompare(){
+  const sorted = [...LOB_DATA].sort((a,b)=>LOBS.indexOf(a.lob)-LOBS.indexOf(b.lob));
+  new Chart(document.getElementById('lobCompareChart'),{
+    type:'bar',
+    data:{
+      labels:sorted.map(l=>l.lob),
+      datasets:[
+        { label:'PE %', data:sorted.map(l=>l.pe), backgroundColor:sorted.map(l=>l.color+'99'), borderColor:sorted.map(l=>l.color), borderWidth:1.5, borderRadius:4, yAxisID:'y' },
+        { label:'PR %', data:sorted.map(l=>l.pr), type:'line', borderColor:'rgba(255,170,0,0.8)', borderWidth:2, pointRadius:4, tension:.3, yAxisID:'y2', pointBackgroundColor:'rgba(255,170,0,0.8)' }
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{labels:{color:'rgba(180,200,240,0.6)',font:{family:'DM Mono',size:10}}},
+        tooltip:{backgroundColor:'rgba(4,10,22,0.95)',borderColor:'rgba(30,120,255,0.4)',borderWidth:1,padding:10,
+          titleFont:{family:'DM Mono',size:11},bodyFont:{family:'DM Mono',size:11}} },
+      scales:{
+        x:{grid:{color:'rgba(30,120,255,0.05)'},ticks:{color:'rgba(120,150,200,0.5)',font:{family:'DM Mono',size:10}}},
+        y:{grid:{color:'rgba(30,120,255,0.05)'},ticks:{color:'rgba(120,150,200,0.5)',font:{family:'DM Mono',size:9},callback:v=>v+'%'},position:'left',min:80,max:95},
+        y2:{grid:{display:false},ticks:{color:'rgba(255,170,0,0.5)',font:{family:'DM Mono',size:9},callback:v=>v+'%'},position:'right',min:35,max:60}
+      }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  BUBBLE CHART
+// ═══════════════════════════════════════════════
+function renderBubble(){
+  const datasets = LOB_DATA.map(l=>({
+    label:l.lob,
+    data:[{ x:l.pe, y:l.pr, r: Math.sqrt(l.revenue/1e9)*5 }],
+    backgroundColor:l.color+'55',
+    borderColor:l.color,
+    borderWidth:2
+  }));
+
+  new Chart(document.getElementById('bubbleChart'),{
+    type:'bubble',
+    data:{ datasets },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{labels:{color:'rgba(180,200,240,0.6)',font:{family:'DM Mono',size:10}}},
+        tooltip:{backgroundColor:'rgba(4,10,22,0.95)',borderColor:'rgba(30,120,255,0.4)',borderWidth:1,padding:10,
+          titleFont:{family:'DM Mono',size:11},bodyFont:{family:'DM Mono',size:11},
+          callbacks:{label:ctx=>`${ctx.dataset.label} · PE:${ctx.parsed.x}% PR:${ctx.parsed.y}%`}} },
+      scales:{
+        x:{grid:{color:'rgba(30,120,255,0.05)'},ticks:{color:'rgba(120,150,200,0.5)',font:{family:'DM Mono',size:9},callback:v=>v+'%'},title:{display:true,text:'Payroll Efficiency %',color:'rgba(120,150,200,0.5)',font:{family:'DM Mono',size:9}}},
+        y:{grid:{color:'rgba(30,120,255,0.05)'},ticks:{color:'rgba(120,150,200,0.5)',font:{family:'DM Mono',size:9},callback:v=>v+'%'},title:{display:true,text:'Payroll to Revenue %',color:'rgba(120,150,200,0.5)',font:{family:'DM Mono',size:9}}}
+      }
+    }
+  });
+
+  document.getElementById('bubble-legend').innerHTML = LOB_DATA.map(l=>`
+    <div class="bubble-legend-item"><div class="bubble-legend-dot" style="background:${l.color}"></div>${l.lob}</div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════
+//  WATERFALL
+// ═══════════════════════════════════════════════
+function renderWaterfall(){
+  const items = ['Base PE','Sales','Support','Collections','Tech Sup.','Retention','Back Off.','Total'];
+  const values = [85, 3.2, 1.8, -0.8, 2.1, -1.2, 0.9, 91];
+  const colors = values.map((v,i)=>i===0||i===items.length-1?'rgba(30,120,255,0.8)':v>=0?'rgba(0,230,118,0.7)':'rgba(255,51,102,0.7)');
+
+  new Chart(document.getElementById('waterfallChart'),{
+    type:'bar',
+    data:{
+      labels:items,
+      datasets:[{ data:values, backgroundColor:colors, borderColor:colors.map(c=>c.replace(',0.',',.9,')), borderWidth:1.5, borderRadius:4 }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false},
+        tooltip:{backgroundColor:'rgba(4,10,22,0.95)',borderColor:'rgba(30,120,255,0.4)',borderWidth:1,padding:10,
+          titleFont:{family:'DM Mono',size:11},bodyFont:{family:'DM Mono',size:11},
+          callbacks:{label:ctx=>`${ctx.parsed.y>0?'+':''}${ctx.parsed.y}%`}} },
+      scales:{
+        x:{grid:{display:false},ticks:{color:'rgba(120,150,200,0.5)',font:{family:'DM Mono',size:9}}},
+        y:{grid:{color:'rgba(30,120,255,0.05)'},ticks:{color:'rgba(120,150,200,0.5)',font:{family:'DM Mono',size:9},callback:v=>v+'%'}}
+      }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  DISTRIBUTION
+// ═══════════════════════════════════════════════
+function renderDistribution(){
+  const buckets = {'<78%':0,'78-82%':0,'82-85%':0,'85-88%':0,'88-92%':0,'>92%':0};
+  AGENTS.forEach(a=>{
+    if(a.pe<78) buckets['<78%']++;
+    else if(a.pe<82) buckets['78-82%']++;
+    else if(a.pe<85) buckets['82-85%']++;
+    else if(a.pe<88) buckets['85-88%']++;
+    else if(a.pe<92) buckets['88-92%']++;
+    else buckets['>92%']++;
+  });
+  const bColors = ['rgba(255,51,102,0.7)','rgba(255,107,107,0.6)','rgba(255,170,0,0.7)','rgba(30,120,255,0.7)','rgba(0,212,255,0.7)','rgba(0,230,118,0.7)'];
+
+  new Chart(document.getElementById('distChart'),{
+    type:'bar',
+    data:{ labels:Object.keys(buckets), datasets:[{ data:Object.values(buckets), backgroundColor:bColors, borderColor:bColors.map(c=>c.replace(',0.',',1,')), borderWidth:1.5, borderRadius:6 }] },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false},
+        tooltip:{backgroundColor:'rgba(4,10,22,0.95)',borderColor:'rgba(30,120,255,0.4)',borderWidth:1,padding:10,
+          titleFont:{family:'DM Mono',size:11},bodyFont:{family:'DM Mono',size:11},
+          callbacks:{label:ctx=>`${ctx.parsed.y} agentes`}} },
+      scales:{
+        x:{grid:{display:false},ticks:{color:'rgba(120,150,200,0.5)',font:{family:'DM Mono',size:9}}},
+        y:{grid:{color:'rgba(30,120,255,0.05)'},ticks:{color:'rgba(120,150,200,0.5)',font:{family:'DM Mono',size:9}}}
+      }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  UTILIZATION RADAR
+// ═══════════════════════════════════════════════
+function renderUtilization(){
+  new Chart(document.getElementById('utilizationChart'),{
+    type:'radar',
+    data:{
+      labels:['PE','PR Score','Attendance','AHT Score','CSAT','Revenue/hr'],
+      datasets: LOB_DATA.slice(0,3).map(l=>({
+        label:l.lob,
+        data:[rand(70,95,0),rand(60,90,0),rand(75,98,0),rand(65,92,0),rand(70,95,0),rand(68,90,0)],
+        borderColor:l.color,
+        backgroundColor:l.color+'18',
+        borderWidth:2,
+        pointBackgroundColor:l.color
+      }))
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{labels:{color:'rgba(180,200,240,0.6)',font:{family:'DM Mono',size:10}}},
+        tooltip:{backgroundColor:'rgba(4,10,22,0.95)',borderColor:'rgba(30,120,255,0.4)',borderWidth:1,padding:10} },
+      scales:{ r:{ grid:{color:'rgba(30,120,255,0.1)'}, angleLines:{color:'rgba(30,120,255,0.1)'},
+        ticks:{color:'rgba(120,150,200,0.4)',font:{family:'DM Mono',size:8},backdropColor:'transparent'},
+        pointLabels:{color:'rgba(180,200,240,0.6)',font:{family:'DM Mono',size:9}} } }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  INSIGHTS
+// ═══════════════════════════════════════════════
+function renderInsights(){
+  const bestLOB = LOB_DATA[0];
+  const worstLOB = [...LOB_DATA].sort((a,b)=>a.pe-b.pe)[0];
+  const critAgents = AGENTS.filter(a=>a.status==='Critical').slice(0,1)[0];
+  const riskAgents = AGENTS.filter(a=>a.status==='Risk').length;
+  const avgPE = TOTALS.pe;
+  const targetPE = 90;
+  const prImpact = ((targetPE-avgPE)*0.52).toFixed(2);
+
+  const insights = [
+    { type:'success', icon:'🏆', text:`<strong>${bestLOB.lob}</strong> lidera el ranking con <strong>${bestLOB.pe.toFixed(1)}% PE</strong> y el menor payroll ratio de <strong>${bestLOB.pr.toFixed(1)}%</strong> entre todos los LOBs.`, metric:`PE: ${bestLOB.pe.toFixed(1)}% · PR: ${bestLOB.pr.toFixed(1)}%` },
+    { type:'danger', icon:'⚠️', text:critAgents?`El agente <strong>${critAgents.name}</strong> (${critAgents.lob}) tiene <strong>${critAgents.pe.toFixed(1)}% PE</strong>, por debajo de la meta crítica. Está generando leakage de payroll.`:`No hay agentes en estado crítico esta semana.`, metric:`Critical PE < 78%` },
+    { type:'', icon:'📈', text:`Incrementar el PE global de <strong>${avgPE.toFixed(1)}%</strong> a <strong>${targetPE}%</strong> podría reducir el Payroll to Revenue en <strong>${prImpact}%</strong>.`, metric:`Impacto estimado: -${prImpact}% PR` },
+    { type:'warn', icon:'🔔', text:`<strong>${riskAgents} agentes</strong> se encuentran en zona de riesgo (PE 78-85%). Requieren intervención de sus Team Leads en los próximos 7 días.`, metric:`Agentes en riesgo: ${riskAgents}` },
+    { type:'', icon:'💡', text:`<strong>${worstLOB.lob}</strong> presenta la menor eficiencia con <strong>${worstLOB.pe.toFixed(1)}% PE</strong>. Un plan de mejora podría generar un ahorro de COP ${(worstLOB.payroll*0.03/1e6).toFixed(1)}M/semana.`, metric:`Oportunidad: COP ${(worstLOB.payroll*0.03/1e6).toFixed(1)}M` },
+    { type:'success', icon:'📊', text:`El PE global actual de <strong>${avgPE.toFixed(1)}%</strong> supera la meta de <strong>85%</strong> en <strong>+${(avgPE-85).toFixed(1)}pp</strong>. El PR de <strong>${TOTALS.pr.toFixed(1)}%</strong> está dentro del rango operacional.`, metric:`Benchmark: PE 88% → PR 46%` },
+    { type:'warn', icon:'🎯', text:`WoW: PE mejoró <strong>+${TOTALS.wowPe}%</strong>. Si se mantiene esta tendencia, el trimestre cerraría con PE de <strong>${(avgPE+TOTALS.wowPe*4).toFixed(1)}%</strong>.`, metric:`Proyección Q: ${(avgPE+TOTALS.wowPe*4).toFixed(1)}% PE` },
+  ];
+
+  document.getElementById('insights-grid').innerHTML = insights.map(ins=>`
+    <div class="insight-card ${ins.type}">
+      <div class="insight-icon ${ins.type}">${ins.icon}</div>
+      <div class="insight-text">${ins.text}</div>
+      <div class="insight-metric">${ins.metric}</div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════
+//  FILTERS
+// ═══════════════════════════════════════════════
+function applyFilters(){
+  const lob = document.getElementById('filter-lob').value;
+  const status = document.getElementById('filter-status').value;
+  const tl = document.getElementById('filter-tl').value;
+  filteredAgents = AGENTS.filter(a=>
+    (!lob||a.lob===lob) &&
+    (!status||a.status===status) &&
+    (!tl||a.tl===tl)
+  );
+  currentPage=1;
+  renderAgentsTable();
+}
+
+function populateTLFilter(){
+  const tls = [...new Set(AGENTS.map(a=>a.tl))].sort();
+  const sel = document.getElementById('filter-tl');
+  tls.forEach(tl=>{ const o=document.createElement('option'); o.textContent=tl; sel.appendChild(o); });
+}
+
+function togglePeriod(el, period){
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  const labels = {week:'Semana 20 · Mayo 2025',month:'Mayo 2025',quarter:'Q2 2025'};
+  document.getElementById('current-period').textContent = labels[period];
+}
+
+// ═══════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════
+function scrollTo(id){
+  document.getElementById(id).scrollIntoView({behavior:'smooth', block:'start'});
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+}
+
+// ═══════════════════════════════════════════════
+//  EXPORT
+// ═══════════════════════════════════════════════
+function exportCSV(){
+  const headers = ['ID','Nombre','LOB','Team Lead','H.Productivas','H.Nómina','PE%','Payroll COP','Revenue COP','PR%','Estado'];
+  const rows = filteredAgents.map(a=>[a.id,a.name,a.lob,a.tl,a.prodHours,a.nomHours,a.pe.toFixed(2),a.payrollCost,a.revenue,a.pr.toFixed(2),a.status]);
+  const csv = [headers,...rows].map(r=>r.join(',')).join('\n');
+  const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='payroll_efficiency_export.csv'; a.click();
+}
+
+function exportExcel(){
+  if(typeof XLSX==='undefined'){ alert('XLSX library not loaded'); return; }
+  const data = [
+    ['ID','Nombre','LOB','Team Lead','H.Productivas','H.Nómina','PE%','Payroll COP','Revenue COP','PR%','Estado'],
+    ...filteredAgents.map(a=>[a.id,a.name,a.lob,a.tl,a.prodHours,a.nomHours,a.pe,a.payrollCost,a.revenue,a.pr,a.status])
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,'Agentes',ws);
+  XLSX.writeFile(wb,'payroll_efficiency.xlsx');
+}
+
+function exportPDF(){
+  window.print();
+}
+
+function refreshData(){
+  const btn = event.currentTarget;
+  btn.textContent='↺ Refreshing...';
+  btn.disabled=true;
+  setTimeout(()=>{
+    document.getElementById('last-update').textContent = new Date().toLocaleTimeString('es-CO');
+    btn.textContent='↺ Refresh';
+    btn.disabled=false;
+  },1200);
+}
+
+// ═══════════════════════════════════════════════
+//  ANIMATED BG PARTICLES
+// ═══════════════════════════════════════════════
+(function(){
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText='position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.2';
+  document.body.prepend(canvas);
+  const ctx = canvas.getContext('2d');
+  let W,H,particles=[];
+
+  function resize(){ W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight; }
+  resize();
+  window.addEventListener('resize',resize);
+
+  for(let i=0;i<60;i++){
+    particles.push({
+      x:Math.random()*W, y:Math.random()*H,
+      vx:(Math.random()-.5)*.3, vy:(Math.random()-.5)*.3,
+      size:Math.random()*1.5+.5,
+      alpha:Math.random()*.5+.1
+    });
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    particles.forEach(p=>{
+      p.x+=p.vx; p.y+=p.vy;
+      if(p.x<0)p.x=W; if(p.x>W)p.x=0;
+      if(p.y<0)p.y=H; if(p.y>H)p.y=0;
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+      ctx.fillStyle=`rgba(30,120,255,${p.alpha})`;
+      ctx.fill();
+    });
+    // connections
+    particles.forEach((p,i)=>{
+      particles.slice(i+1).forEach(q=>{
+        const d=Math.hypot(p.x-q.x,p.y-q.y);
+        if(d<120){
+          ctx.beginPath();
+          ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y);
+          ctx.strokeStyle=`rgba(30,120,255,${(1-d/120)*.08})`;
+          ctx.lineWidth=.5;
+          ctx.stroke();
+        }
+      });
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// Chart.js global defaults
+Chart.defaults.color = 'rgba(180,200,240,0.6)';
+Chart.defaults.font.family = 'DM Mono';
+Chart.defaults.plugins.legend.labels.usePointStyle = true;
+
+// Intersection observer for scroll highlighting
+const sections = ['exec','pe-analytics','pr-analytics','agents','lob','advanced','insights'];
+const navItems = document.querySelectorAll('.nav-item');
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      navItems.forEach(n=>n.classList.remove('active'));
+      const idx = sections.indexOf(e.target.id);
+      if(idx>=0&&navItems[idx]) navItems[idx].classList.add('active');
+    }
+  });
+},{threshold:.3});
+document.addEventListener('DOMContentLoaded',()=>{
+  sections.forEach(s=>{ const el=document.getElementById(s); if(el) obs.observe(el); });
+});
+</script>
+</body>
+</html>
